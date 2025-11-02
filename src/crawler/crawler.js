@@ -53,7 +53,6 @@ export const fetchRepositories = async (limit, batchSize) => {
       hasNextPage = data.search.pageInfo.hasNextPage;
       endCursor = data.search.pageInfo.endCursor;
 
-      await new Promise((r) => setTimeout(r, 500)); // small delay
     } catch (error) {
       console.error("Error fetching data:", error.response?.data || error.message);
       break;

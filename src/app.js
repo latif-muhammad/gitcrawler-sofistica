@@ -1,15 +1,16 @@
 import { client, setupDB } from "./database/setup-db.js";
-import { fetchRepositories } from "./crawler/crawler.js"
+import { fetchRepositories } from "./crawler/crawler.js";
 
 const app = async () => {
-  (async () => {
+  try {
     await setupDB();
-    const repos = await fetchRepositories(10, 10);
+    const repos = await fetchRepositories(2000, 100);
     console.log("\nTop Repositories:");
     console.log(repos);
     await client.end();
-  })();
+  } catch (error) {
+    console.log("Error in app:", error);
+  }
 };
-
 
 app();
