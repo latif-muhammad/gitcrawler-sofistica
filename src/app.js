@@ -1,7 +1,7 @@
 // crawler.js
 import dotenv from "dotenv";
 import axios from "axios";
-import client, { setupDB } from "./database/setup-db.js";
+import { client, setupDB } from "./database/setup-db.js";
 
 dotenv.config();
 
