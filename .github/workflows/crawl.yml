@@ -51,9 +51,12 @@ jobs:
         run: node src/app.js
 
       - name: Dump DB contents
+        env:
+          PGPASSWORD: postgres
         run: |
           sudo apt-get install -y postgresql-client
           pg_dump -h localhost -U postgres postgres > dump.sql
+
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
