@@ -1,0 +1,19 @@
+{
+  "name": "gitcrawler-sofistica",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "setup-db": "node src/database/setup.js",
+    "export-data": "node src/utils/export-data.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.3",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "csv-writer": "^1.6.0"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
