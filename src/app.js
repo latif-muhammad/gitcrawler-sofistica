@@ -1,11 +1,12 @@
 import dotenv from "dotenv";
 import axios from "axios";
+import { client, connectDB } from "./db.js";
 
 dotenv.config();
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-const client = axios.create({
+const githubReq = axios.create({
   baseURL: "https://api.github.com/graphql",
   headers: {
     Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -22,10 +23,7 @@ const fetchRepositories = async (limit, batchSize) => {
     const query = `
       query ($cursor: String) {
         search(query: "stars:>0", type: REPOSITORY, first: ${batchSize}, after: $cursor) {
-          pageInfo {
-            endCursor
-            hasNextPage
-          }
+          pageInfo { endCursor hasNextPage }
           edges {
             node {
               ... on Repository {
@@ -36,35 +34,32 @@ const fetchRepositories = async (limit, batchSize) => {
             }
           }
         }
-        rateLimit {
-          cost
-          remaining
-          resetAt
-        }
+        rateLimit { cost remaining resetAt }
       }
     `;
 
     try {
-      const response = await client.post("", {
+      const response = await githubReq.post("", {
         query,
         variables: { cursor: endCursor },
       });
       const data = response.data.data;
 
-      // Extract repositories
       const repos = data.search.edges.map((edge) => edge.node);
       allRepos.push(...repos);
 
       console.log(`Fetched ${allRepos.length} repos so far...`);
-      console.log(
-        `Rate limit remaining: ${data.rateLimit.remaining}, cost: ${data.rateLimit.cost}`
-      );
+
+      // Save each repo into the DB
+      for (const repo of repos) {
+        await client.query(
+          "INSERT INTO repositories (name, owner, stars) VALUES ($1, $2, $3)",
+          [repo.name, repo.owner.login, repo.stargazerCount]
+        );
+      }
 
       hasNextPage = data.search.pageInfo.hasNextPage;
       endCursor = data.search.pageInfo.endCursor;
-
-      // Delay 0.5s to avoid throttling
-      //   await new Promise(r => setTimeout(r, 50));
     } catch (error) {
       console.error(
         "Error fetching data:",
@@ -77,11 +72,13 @@ const fetchRepositories = async (limit, batchSize) => {
   return allRepos.slice(0, limit);
 };
 
-// Run
+
 (async () => {
+  await connectDB();
   const repos = await fetchRepositories(100, 100);
   console.log("\nTop Repositories:");
   repos.forEach((r) =>
-    console.log(`${r.owner.login}/${r.name} ⭐ ${r.stargazerCount}`)
+    console.log(`${r.owner.login}/${r.name} ${r.stargazerCount}`)
   );
+  await client.end();
 })();

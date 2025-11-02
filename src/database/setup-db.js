@@ -10,7 +10,8 @@ const createTableQuery = `CREATE TABLE repositories (
 );
 `;
 
-const client = new Client({
+
+ export const client = new Client({
   host: process.env.PGHOST || "localhost",
   port: process.env.PGPORT || 5432,
   user: process.env.PGUSER || "postgres",
@@ -18,11 +19,15 @@ const client = new Client({
   database: process.env.PGDATABASE || "postgres",
 });
 
-const setupDB = async () => {
-  await client.connect();
-  await client.query(createTableQuery);
-  console.log("✅ Table created successfully!");
-  await client.end();
+
+export const setupDB = async () => {
+  try {
+    await client.connect();
+    await client.query(createTableQuery);
+    console.log("Table created successfully!");
+    await client.end();
+  } catch (err) {
+    console.log("Error setting up the database:", err);
+  }
 };
 
-setupDB().catch(console.error);
