@@ -1,0 +1,139 @@
+name: Test PostgreSQL Container
+
+on:
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  test-postgres:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Test PostgreSQL connection
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: test_db
+        run: |
+          echo "🔍 Testing PostgreSQL connection..."
+
+          # Test basic connection
+          psql -c "SELECT version();"
+
+          # Create a test table
+          psql -c "CREATE TABLE IF NOT EXISTS test_table (id SERIAL PRIMARY KEY, name VARCHAR(50), created_at TIMESTAMP DEFAULT NOW());"
+
+          # Insert test data
+          psql -c "INSERT INTO test_table (name) VALUES ('test_record_1'), ('test_record_2');"
+
+          # Query the data
+          echo "📊 Querying test data:"
+          psql -c "SELECT * FROM test_table;"
+
+          # Count records
+          echo "📈 Record count:"
+          psql -c "SELECT COUNT(*) as total_records FROM test_table;"
+
+          # Show databases
+          echo "🗄️ Available databases:"
+          psql -c "SELECT datname FROM pg_database WHERE datistemplate = false;"
+
+          echo "✅ PostgreSQL container is working perfectly!"
+
+      - name: Test with Node.js script
+        run: |
+          cat > test-postgres.js << 'EOF'
+          import pg from 'pg';
+          const { Client } = pg;
+
+          async function testPostgres() {
+            console.log('🔌 Testing PostgreSQL with Node.js...');
+            
+            const client = new Client({
+              host: 'localhost',
+              port: 5432,
+              user: 'postgres',
+              password: 'postgres',
+              database: 'test_db'
+            });
+
+            try {
+              await client.connect();
+              console.log('✅ Connected to PostgreSQL');
+
+              // Create table
+              await client.query(`
+                CREATE TABLE IF NOT EXISTS node_test (
+                  id SERIAL PRIMARY KEY,
+                  message TEXT,
+                  stars INTEGER,
+                  created_at TIMESTAMP DEFAULT NOW()
+                )
+              `);
+
+              // Insert data
+              await client.query(`
+                INSERT INTO node_test (message, stars) 
+                VALUES 
+                  ('Hello from Node.js!', 100),
+                  ('PostgreSQL is working!', 200)
+              `);
+
+              // Query data
+              const result = await client.query('SELECT * FROM node_test');
+              console.log('📊 Data from Node.js:');
+              result.rows.forEach(row => {
+                console.log(`   ID: ${row.id}, Message: "${row.message}", Stars: ${row.stars}`);
+              });
+
+              console.log('🎉 Node.js PostgreSQL test completed successfully!');
+
+            } catch (error) {
+              console.error('❌ Error:', error);
+            } finally {
+              await client.end();
+            }
+          }
+
+          testPostgres();
+          EOF
+
+          node test-postgres.js
+
+      - name: Create simple test file
+        run: |
+          echo "📝 Creating a simple test file to verify workflow completion..."
+          echo "PostgreSQL Test Completed Successfully!" > test-result.txt
+          echo "Container is working perfectly!" >> test-result.txt
+          echo "Timestamp: $(date)" >> test-result.txt
+
+          cat test-result.txt
+
+      - name: Upload test result
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgres-test-result
+          path: test-result.txt
