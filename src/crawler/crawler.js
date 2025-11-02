@@ -2,7 +2,7 @@
 import { ghClient } from "../api/gitApi.js";
 import { client } from "../database/setup-db.js";
 
-export const fetchRepositories = async (limit, batchSize) => {
+export const fetchRepositories = async (segment, limit, batchSize) => {
   let hasNextPage = true;
   let endCursor = null;
   let allRepos = [];
@@ -10,7 +10,7 @@ export const fetchRepositories = async (limit, batchSize) => {
   while (hasNextPage && allRepos.length < limit) {
     const query = `
       query ($cursor: String) {
-        search(query: "stars:>0", type: REPOSITORY, first: ${batchSize}, after: $cursor) {
+        search(query: "${segment}", type: REPOSITORY, first: ${batchSize}, after: $cursor) {
           pageInfo {
             endCursor
             hasNextPage
@@ -52,6 +52,8 @@ export const fetchRepositories = async (limit, batchSize) => {
 
       hasNextPage = data.search.pageInfo.hasNextPage;
       endCursor = data.search.pageInfo.endCursor;
+
+      console.log("has next", hasNextPage , "cursor", endCursor);
 
     } catch (error) {
       console.error("Error fetching data:", error.response?.data || error.message);
