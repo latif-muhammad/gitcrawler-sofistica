@@ -58,7 +58,7 @@ export const fetchRepositories = async (segment, limit, batchSize) => {
       endCursor = data.search.pageInfo.endCursor;
 
       console.log("has next", hasNextPage, "cursor", endCursor);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 200));
     } catch (error) {
       console.error(
         "Error fetching data:",
@@ -68,5 +68,5 @@ export const fetchRepositories = async (segment, limit, batchSize) => {
     }
   }
 
-  return allRepos.slice(0, limit);
+  return allRepos;
 };
