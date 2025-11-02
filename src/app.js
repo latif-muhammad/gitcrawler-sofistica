@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import axios from "axios";
-import { client, connectDB } from "./db.js";
+import { client, connectDB } from "./database/setup-db.js";
 
 dotenv.config();
 
