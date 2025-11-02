@@ -23,7 +23,6 @@ export const setupDB = async () => {
     await client.connect();
     await client.query(createTableQuery);
     console.log("Table created successfully!");
-    await client.end();
   } catch (err) {
     console.log("Error setting up the database:", err);
   }
