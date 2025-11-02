@@ -1,40 +1,62 @@
-name: Test Postgres Container
+name: GitHub Crawler
 
 on:
-  workflow_dispatch: # allows manual run
   push:
     branches: [ main ]
 
 jobs:
-  test-postgres:
+  crawl:
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:15
-        ports:
-          - 5432:5432
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=5s
+          --health-cmd="pg_isready"
+          --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Wait for Postgres to be ready
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Postgres
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+        run: node src/database/setup-db.js
+
+      - name: Crawl GitHub Repos
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node src/app.js
+
+      - name: Dump DB contents
         run: |
-          echo "Waiting for Postgres..."
-          until pg_isready -h localhost -p 5432 -U postgres; do
-            sleep 2
-          done
-          echo "✅ Postgres is ready!"
+          sudo apt-get install -y postgresql-client
+          pg_dump -h localhost -U postgres postgres > dump.sql
 
-      - name: Print success message
-        run: echo "🎉 GitHub Actions is running and Postgres container works!"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-dump
+          path: dump.sql
