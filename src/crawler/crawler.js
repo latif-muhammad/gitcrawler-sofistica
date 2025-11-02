@@ -1,4 +1,3 @@
-
 import { ghClient } from "../api/gitApi.js";
 import { client } from "../database/setup-db.js";
 
@@ -34,14 +33,19 @@ export const fetchRepositories = async (segment, limit, batchSize) => {
     `;
 
     try {
-      const response = await ghClient.post("", { query, variables: { cursor: endCursor } });
+      const response = await ghClient.post("", {
+        query,
+        variables: { cursor: endCursor },
+      });
       const data = response.data.data;
 
       const repos = data.search.edges.map((edge) => edge.node);
       allRepos.push(...repos);
 
       console.log(`Fetched ${allRepos.length} repos so far...`);
-      console.log(`Rate limit remaining: ${data.rateLimit.remaining}, cost: ${data.rateLimit.cost}`);
+      console.log(
+        `Rate limit remaining: ${data.rateLimit.remaining}, cost: ${data.rateLimit.cost}`
+      );
 
       for (const repo of repos) {
         await client.query(
@@ -53,10 +57,13 @@ export const fetchRepositories = async (segment, limit, batchSize) => {
       hasNextPage = data.search.pageInfo.hasNextPage;
       endCursor = data.search.pageInfo.endCursor;
 
-      console.log("has next", hasNextPage , "cursor", endCursor);
-
+      console.log("has next", hasNextPage, "cursor", endCursor);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } catch (error) {
-      console.error("Error fetching data:", error.response?.data || error.message);
+      console.error(
+        "Error fetching data:",
+        error.response?.data || error.message
+      );
       break;
     }
   }
