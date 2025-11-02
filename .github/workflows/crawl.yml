@@ -1,4 +1,4 @@
-name: Test Postgres Container
+name: CrawlerActions
 
 on:
   workflow_dispatch: # allows manual run
