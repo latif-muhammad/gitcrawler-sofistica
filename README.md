@@ -3,7 +3,7 @@
 
 **Artifact is stored in the top Action Instance, in a folder named stars-artifact-sql**
 
-    - Go to your repo named Final 100k Repo
+    - Go to action  named Final 100k Repo
     - Find "Artifacts" section  at the bottom and download folder nammed stars-artifact-sql 
     - you will find Sql file named stars.sql with all 100k rows 
 
@@ -66,5 +66,6 @@ CREATE TABLE ci_checks (
     completed_at TIMESTAMPTZ
 );
 ```
+
 
 
